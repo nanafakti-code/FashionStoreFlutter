@@ -1,0 +1,49 @@
+name: fashion_store_flutter
+description: FashionStore - E-commerce de electrónica reacondicionada
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Supabase
+  supabase_flutter: ^2.3.0
+
+  # Stripe
+  flutter_stripe: ^10.1.0
+
+  # Estado
+  flutter_riverpod: ^2.4.0
+
+  # Navegación
+  go_router: ^13.0.0
+
+  # Utilidades
+  flutter_dotenv: ^5.1.0
+  intl: ^0.18.0
+  cached_network_image: ^3.3.0
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.0
+
+  # UI
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.0
+  cupertino_icons: ^1.0.2
+  http: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - .env
