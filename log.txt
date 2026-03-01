@@ -1,0 +1,4 @@
+﻿cb0445d Add full technical documentation and marketing tab fixes
+4b57511 feat: Introduce extensive new features, admin functionalities, and Windows desktop platform support.
+3d34982 docs: README completo con descripción detallada del proyecto
+37e15bd feat: Implementación completa de diseño responsive y mejora estética

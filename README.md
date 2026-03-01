@@ -1,330 +1,175 @@
-# Fashion Store Flutter 🛍️
+# FashionStore Flutter
 
-Una aplicación de tienda de moda moderna y completamente responsive construida con Flutter. Ofrece una experiencia de compra fluida en dispositivos móviles, tablets y desktops con un diseño Material 3 elegante y funcionalidades de e-commerce completas.
+Aplicación de e-commerce de moda migrada desde Astro a Flutter, manteniendo la misma base de datos (Supabase), lógica de negocio, diseño visual y funcionalidades.
 
-## ✨ Características Principales
+## Arquitectura
 
-### 🎨 Diseño y UI/UX
-- **Material 3 Design System** - Implementación completa del nuevo lenguaje de diseño de Google
-- **Paleta de Colores Moderna**
-  - Primario: Azul elegante (#2563EB)
-  - Secundario: Esmeralda fresca (#10B981)
-  - Terciario: Ámbar cálido (#F59E0B)
-- **Tipografía Professional** - Fuentes optimizadas para legibilidad
-- **Animaciones Fluidas** - Transiciones y efectos visuales suaves
-
-### 📱 Responsividad Total
-- **Sistema de Breakpoints Inteligente**
-  - Mobile: < 600px
-  - Tablet: 600px - 1200px
-  - Desktop: > 1200px
-- **Layouts Adaptativos**
-  - Home Screen: Hero flexible + Grid dinámico
-  - Product Detail: Móvil (vertical) / Tablet (lado a lado)
-  - Cart Screen: Lista (móvil) / Dual-layout (tablet)
-  - Categories: Lista (móvil) / Grid 2-col (tablet) / Grid 3-col (desktop)
-- **Optimización de Imágenes** - Carga eficiente con caché
-
-### 🛒 Funcionalidades E-commerce
-- **Catálogo de Productos**
-  - Browse productos por categorías
-  - Búsqueda y filtrado avanzado
-  - Detalles completos del producto con galerías de imágenes
-  - Stock en tiempo real
-
-- **Carrito de Compras**
-  - Agregar/remover productos
-  - Selector de cantidad
-  - Cálculo automático de totales
-  - Persistencia local
-
-- **Pedidos**
-  - Historial de compras
-  - Seguimiento de estado
-  - Detalles de envío
-
-- **Pago Seguro**
-  - Integración Stripe
-  - Múltiples métodos de pago
-  - Validación segura de tarjetas
-
-### 🔐 Autenticación y Seguridad
-- **Sistema de Login/Registro**
-  - Autenticación con Supabase
-  - Almacenamiento seguro de credenciales
-  - Recuperación de contraseña
-- **JWT Tokens** - Sesiones seguras
-- **Validación de Datos** - Entrada sanitizada
-
-### 📦 Backend Integration
-- **Supabase** - Base de datos PostgreSQL en tiempo real
-- **Stripe** - Procesamiento de pagos seguro
-- **Variables de Entorno** - Configuración segura con `flutter_dotenv`
-
-## 🏗️ Arquitectura
+- **Framework**: Flutter 3.x + Dart >=3.3.4
+- **State Management**: GetX (MVVM)
+- **Backend**: Supabase (Auth + PostgreSQL + Storage)
+- **Pagos**: Stripe
+- **Estructura**: Controllers → Services → Supabase
 
 ```
 lib/
-├── config/              # Configuración global
-│   ├── app_theme.dart   # Tema Material 3 + ResponsiveHelper
-│   ├── routes.dart      # Rutas de navegación
-│   ├── constants.dart   # Constantes de la app
-│   └── env_config.dart  # Variables de entorno
-├── models/              # Modelos de datos
-│   ├── producto.dart
-│   ├── carrito.dart
-│   ├── pedido.dart
-│   ├── usuario.dart
-│   ├── cupon.dart
-│   └── models.dart
-├── screens/             # Pantallas de la aplicación
-│   ├── home_screen.dart
-│   ├── product_list_screen.dart
-│   ├── product_detail_screen.dart
-│   ├── categories_screen.dart
-│   ├── cart_screen.dart
-│   ├── login_screen.dart
-│   └── screens.dart
-├── services/            # Servicios de negocio
-│   ├── product_service.dart
-│   ├── cart_service.dart
-│   ├── auth_service.dart
-│   ├── order_service.dart
-│   ├── stripe_service.dart
-│   ├── supabase_service.dart
-│   └── services.dart
-├── widgets/             # Componentes reutilizables
-│   ├── product_card.dart
-│   ├── common_widgets.dart
-│   ├── cart_widgets.dart
-│   └── widgets.dart
-└── main.dart            # Punto de entrada
+├── main.dart                    # Entry point + registro global de servicios
+├── config/
+│   ├── theme/
+│   │   ├── app_colors.dart      # Paleta FashionStore (Navy, Cream, Gold, Green)
+│   │   └── app_theme.dart       # Material 3 theme con Poppins
+│   ├── constants.dart           # Constantes (envío, IVA, timeouts)
+│   └── env_config.dart          # Variables de entorno (.env)
+└── app/
+    ├── routes/
+    │   ├── app_routes.dart      # Definición de rutas (15 rutas)
+    │   └── app_pages.dart       # Registro de páginas con bindings
+    ├── bindings/
+    │   └── app_binding.dart     # 10 binding classes (DI por pantalla)
+    ├── controllers/             # 11 controllers GetX
+    ├── data/
+    │   ├── models/              # ProductoModel, CarritoModel, PedidoModel, etc.
+    │   ├── services/            # 7 servicios (Auth, Cart, Order, Admin, etc.)
+    │   └── repositories/        # ProductoRepository, CategoriaRepository
+    ├── modules/                 # Pantallas organizadas por feature
+    │   ├── home/
+    │   ├── product_detail/
+    │   ├── auth/ (login, register)
+    │   ├── checkout/
+    │   ├── profile/
+    │   ├── orders/
+    │   ├── wishlist/
+    │   ├── search/
+    │   └── admin/ (login, dashboard con 8 tabs)
+    ├── widgets/                 # ProductCard, CommonWidgets
+    └── utils/                   # ResponsiveHelper
 ```
 
-### Patrón Responsivo
-```dart
-// ResponsiveHelper - Utility class centralizado
-static int getGridCrossAxisCount(BuildContext context) {
-  final width = MediaQuery.of(context).size.width;
-  if (width < 600) return 2;          // Mobile
-  if (width < 1200) return 3;         // Tablet
-  return 4;                           // Desktop
-}
+## Funcionalidades
 
-// Uso en widgets
-GridView.builder(
-  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
-  ),
-  // ...
-)
-```
+### Usuario
+- Catálogo de productos con filtros por categoría y búsqueda
+- Detalle de producto con galería de imágenes y reseñas
+- Carrito de compra (offline-first con SharedPreferences)
+- Checkout con dirección de envío, cupones de descuento y resumen
+- Gestión de pedidos (historial, detalle, cancelación)
+- Lista de deseos (favoritos)
+- Perfil de usuario con direcciones guardadas
+- Autenticación (login, registro, recuperación de contraseña)
 
-## 🚀 Instalación y Setup
+### Administrador
+- Dashboard con estadísticas (productos, pedidos, usuarios, ingresos)
+- CRUD de productos
+- Gestión de pedidos (cambio de estado)
+- Gestión de usuarios (roles)
+- Moderación de reseñas
+- Cupones de descuento (crear, validar, eliminar)
+- Devoluciones
+- Campañas de email / Newsletter
 
-### Requisitos Previos
-- Flutter SDK ≥ 3.0
-- Dart ≥ 3.0
-- Git
+## Requisitos
 
-### Pasos de Instalación
+- Flutter SDK >=3.3.4
+- Dart SDK >=3.3.4
+- Cuenta de Supabase con base de datos configurada
+- Cuenta de Stripe (clave publicable)
 
-1. **Clonar el repositorio**
-```bash
-git clone https://github.com/nanafakti-code/FashionStoreFlutter.git
-cd FashionStoreFlutter
-```
+## Instalación
 
-2. **Instalar dependencias**
+### 1. Instalar dependencias
+
 ```bash
 flutter pub get
 ```
 
-3. **Configurar variables de entorno**
+### 2. Configurar variables de entorno
+
 Crear archivo `.env` en la raíz del proyecto:
+
 ```env
-SUPABASE_URL=tu_supabase_url
-SUPABASE_ANON_KEY=tu_supabase_key
-STRIPE_PUBLIC_KEY=tu_stripe_key
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=tu-anon-key
+STRIPE_PUBLISHABLE_KEY=pk_test_tu-stripe-key
+APP_URL=http://localhost:4321
 ```
 
-4. **Ejecutar la aplicación**
+### 3. Tablas requeridas en Supabase
+
+| Tabla | Descripción |
+|-------|-------------|
+| `usuarios` | Perfiles de usuario (nombre, email, rol, teléfono, avatar) |
+| `productos` | Catálogo de productos (nombre, precio, stock, descripción) |
+| `categorias` | Categorías de productos |
+| `marcas` | Marcas de productos |
+| `imagenes_producto` | Imágenes asociadas a productos |
+| `ordenes` | Pedidos realizados |
+| `orden_items` | Items de cada pedido |
+| `cart_items` | Carrito persistente en servidor |
+| `resenas` | Reseñas de productos |
+| `lista_deseos` | Favoritos del usuario |
+| `direcciones` | Direcciones de envío guardadas |
+| `cupones_descuento` | Cupones de descuento |
+| `devoluciones` | Solicitudes de devolución |
+| `newsletter_subscriptions` | Suscripciones al newsletter |
+| `campanas_email` | Campañas de email marketing |
+
+### 4. Ejecutar
+
 ```bash
 # Web
 flutter run -d chrome
 
-# Android (requiere emulador/dispositivo)
-flutter run
+# Android
+flutter run -d android
 
-# iOS (requiere macOS)
+# iOS
 flutter run -d ios
 ```
 
-## 📦 Dependencias Principales
+## Paleta de Colores
 
-```yaml
-flutter:
-  sdk: flutter
+| Color | Hex | Uso |
+|-------|-----|-----|
+| Navy | `#102A43` | Color primario, headers |
+| Charcoal | `#1A1A1A` | Textos principales |
+| Cream | `#F1ECE3` | Fondos, backgrounds |
+| Gold | `#D4A574` | Acentos, categorías, detalles |
+| Green | `#00AA45` | CTAs, botones de acción, precios |
 
-# Estado y Routing
-riverpod: ^2.4.0          # State management
-go_router: ^13.2.0        # Navegación declarativa
+## Dependencias principales
 
-# Backend
-supabase_flutter: ^1.10.0 # Database & Auth
-flutter_stripe: ^10.2.0   # Pagos
+| Paquete | Versión | Uso |
+|---------|---------|-----|
+| `get` | ^4.6.6 | State management, DI, routing |
+| `supabase_flutter` | ^2.3.0 | Backend, auth, database |
+| `flutter_stripe` | ^10.1.0 | Pagos con Stripe |
+| `cached_network_image` | ^3.3.0 | Caché de imágenes |
+| `flutter_dotenv` | ^5.1.0 | Variables de entorno |
+| `flutter_secure_storage` | ^9.0.0 | Almacenamiento seguro |
+| `shared_preferences` | ^2.5.3 | Persistencia local (carrito) |
+| `shimmer` | ^3.0.0 | Efectos de carga |
+| `flutter_svg` | ^2.2.0 | Iconos SVG |
+| `intl` | ^0.20.0 | Formateo de fechas/números |
 
-# UI/UX
-cached_network_image: ^3.3.0  # Imágenes con caché
-shimmer: ^3.0.0               # Efectos de carga
-flutter_svg: ^2.0.0           # SVG support
+## Credenciales de Admin
 
-# Utilidades
-flutter_dotenv: ^5.1.0        # Variables de entorno
-intl: ^0.18.0                 # Localización
-flutter_secure_storage: ^9.0.0 # Almacenamiento seguro
-```
+Email: `admin@fashionstore.com`
+(La contraseña se configura en Supabase Auth)
 
-## 🎯 Características Responsive Implementadas
+## Pantallas
 
-### Home Screen
-- ✅ Hero section adaptativa (200px móvil, 250px tablet)
-- ✅ Promo bar vertical (móvil) / horizontal (tablet)
-- ✅ Grid de categorías dinámico
-- ✅ Grid de productos con columnas adaptativas (2/3/4-5)
-
-### Product Detail
-- ✅ Galería de imágenes responsive
-- ✅ Layout móvil: Scrollable vertical con SliverAppBar
-- ✅ Layout tablet: Imagen + detalles lado a lado
-- ✅ Selector de cantidad y carrito
-
-### Cart Screen
-- ✅ Lista scrollable (móvil)
-- ✅ Dual-layout: Productos + resumen (tablet)
-- ✅ Tarjeta flotante de resumen
-- ✅ Elementos interactivos responsive
-
-### Categories Screen
-- ✅ Lista completa (móvil)
-- ✅ Grid 2-columnas (tablet)
-- ✅ Grid 3-columnas (desktop)
-
-## 🔧 Configuración Avanzada
-
-### Personalizar Tema
-Editar `lib/config/app_theme.dart`:
-```dart
-class AppColors {
-  static const Color primary = Color(0xFF2563EB);      // Azul
-  static const Color secondary = Color(0xFF10B981);    // Esmeralda
-  static const Color tertiary = Color(0xFFF59E0B);     // Ámbar
-  // ...
-}
-```
-
-### Breakpoints Personalizados
-En `ResponsiveHelper`:
-```dart
-static const double mobileBreakpoint = 600;
-static const double tabletBreakpoint = 1200;
-```
-
-### Supabase Configuration
-En `lib/services/supabase_service.dart`:
-- Cambiar URL de Supabase
-- Configurar tablas de base de datos
-- Ajustar políticas de acceso (RLS)
-
-## 📊 Estructura de Base de Datos
-
-### Tablas Principales
-- **productos** - Catálogo de productos
-- **categorias** - Categorías de productos
-- **usuarios** - Datos de usuarios
-- **carritos** - Carrito de compras
-- **pedidos** - Historial de pedidos
-- **items_pedido** - Detalles de cada pedido
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests
-flutter test
-
-# Tests con cobertura
-flutter test --coverage
-```
-
-## 📈 Rendimiento
-
-- **Lazy Loading** - Imágenes y datos cargados bajo demanda
-- **State Management** - Riverpod minimiza rebuilds innecesarios
-- **Caché de Imágenes** - `cached_network_image` con persistencia
-- **Code Splitting** - Rutas lazy con go_router
-
-## 🐛 Debugging
-
-```bash
-# Análisis de código
-flutter analyze
-
-# Problemas frecuentes
-flutter doctor
-
-# Modo debug con DevTools
-flutter run -d chrome --web-launch-url=http://localhost:8080
-```
-
-## 📚 Recursos Útiles
-
-- [Flutter Documentation](https://flutter.dev/docs)
-- [Material Design 3](https://m3.material.io/)
-- [Supabase Docs](https://supabase.com/docs)
-- [Stripe Flutter](https://pub.dev/packages/flutter_stripe)
-
-## 📝 Notas de Desarrollo
-
-### Mejoras Implementadas (v1.0.0)
-- ✅ Implementación completa de responsive design
-- ✅ Modernización del tema con Material 3
-- ✅ Sistema centralizado de breakpoints
-- ✅ Layouts adaptativos en todas las pantallas
-- ✅ Validación y corrección de errores de compilación
-
-### Próximas Mejoras Futuras
-- 🔄 Sistema de cupones y descuentos
-- 🔄 Búsqueda avanzada y filtros
-- 🔄 Reseñas y calificaciones de productos
-- 🔄 Wishlist/Favoritos
-- 🔄 Notificaciones push
-- 🔄 Soporte multiidioma (i18n)
-
-## ⚖️ Licencia
-
-Este proyecto está bajo licencia MIT. Ver archivo `LICENSE` para más detalles.
-
-## 👨‍💼 Autor
-
-Desarrollado como proyecto de Desarrollo de Interfaces - DAM 2º
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas! Por favor:
-1. Fork el repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📞 Soporte
-
-Si encuentras problemas:
-1. Verifica que cumples con todos los requisitos previos
-2. Ejecuta `flutter pub get` nuevamente
-3. Limpia la build: `flutter clean`
-4. Abre un issue en GitHub
-
----
-
-**Made with ❤️ using Flutter**
+| Ruta | Pantalla | Descripción |
+|------|----------|-------------|
+| `/` | Home | Productos destacados, categorías |
+| `/products` | Productos | Catálogo completo con filtros |
+| `/product-detail` | Detalle | Imágenes, info, reseñas, añadir al carrito |
+| `/cart` | Carrito | Items, cantidades, total |
+| `/checkout` | Checkout | Envío, cupón, resumen, pagar |
+| `/login` | Login | Inicio de sesión |
+| `/register` | Registro | Crear cuenta |
+| `/profile` | Perfil | Datos del usuario, menú |
+| `/orders` | Pedidos | Historial de pedidos |
+| `/order-detail` | Detalle pedido | Items, totales, estado |
+| `/wishlist` | Favoritos | Lista de deseos |
+| `/search` | Búsqueda | Buscar productos con filtros |
+| `/admin-login` | Admin Login | Acceso al panel admin |
+| `/admin` | Admin Dashboard | 8 tabs de gestión |

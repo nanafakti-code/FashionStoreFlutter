@@ -1,0 +1,96 @@
+﻿git : remote: error: 
+GH013: Repository rule 
+violations found for 
+refs/heads/main.       
+ 
+En línea: 1 Carácter: 1
++ git push origin main 
+2>&1 | Out-File 
+-FilePath 
+push_error.txt -Encodi 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (remote: error   
+ : ...s/main.          
+  :String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+remote: 
+remote: - GITHUB PUSH 
+PROTECTION        
+remote:   —————————————
+———————————————————————
+—————        
+remote:     Resolve 
+the following 
+violations before 
+pushing again        
+remote: 
+remote:     - Push 
+cannot contain secrets 
+       
+remote: 
+remote:             
+remote:      (?) Learn 
+how to resolve a 
+blocked push        
+remote:      https://do
+cs.github.com/code-secu
+rity/secret-scanning/wo
+rking-with-secret-scann
+ing-and-push-protection
+/working-with-push-prot
+ection-from-the-command
+-line#resolving-a-block
+ed-push        
+remote:             
+remote:             
+remote:       —— 
+Stripe Test API Secret 
+Key ———————————————————
+—————        
+remote:        
+locations:        
+remote:          - 
+commit: 4b57511e489cfaf
+1d077c804f21a20490f3c94
+63        
+remote:            
+path: lib/config/stripe
+_config.dart:4        
+remote:             
+remote:        (?) To 
+push, remove secret 
+from commit(s) or 
+follow this URL to 
+allow the secret.      
+  
+remote:        https://
+github.com/nanafakti-co
+de/FashionStoreFlutter/
+security/secret-scannin
+g/unblock-secret/3AMazD
+xfq3pfR6JCeUofyr1DCJl  
+      
+remote:             
+remote: 
+remote: 
+To https://github.com/n
+anafakti-code/FashionSt
+oreFlutter.git
+ ! [remote rejected] 
+main -> main (push 
+declined due to 
+repository rule 
+violations)
+error: failed to push 
+some refs to 'https://g
+ithub.com/nanafakti-cod
+e/FashionStoreFlutter.g
+it'
