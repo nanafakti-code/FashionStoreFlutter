@@ -37,16 +37,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomFashionAppBar(),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildSearchBar(context),
-              const HeroBannerWidget(),
-              _buildPromoSection(context),
-              _buildFeaturedSection(context),
-            ],
+      body: SafeArea(
+        top: false, // AppBar handles top safety
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildSearchBar(context),
+                const HeroBannerWidget(),
+                _buildPromoSection(context),
+                _buildFeaturedSection(context),
+              ],
+            ),
           ),
         ),
       ),

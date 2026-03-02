@@ -25,14 +25,14 @@ class CustomFashionAppBar extends ConsumerWidget
 
   @override
   Size get preferredSize =>
-      const Size.fromHeight(115); // Adjust height to fit top bar + header
+      const Size.fromHeight(115); // Base height, SafeArea will add top padding
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildTopBar(context),
+        SafeArea(bottom: false, child: _buildTopBar(context)),
         _buildHeader(context, ref),
       ],
     );

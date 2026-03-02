@@ -35,12 +35,15 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         showBackButton: true,
         onBack: () => context.go(AppRoutes.home),
       ),
-      body: Column(
-        children: [
-          _buildSearchBar(context),
-          _buildCategoryFilter(context),
-          Expanded(child: _buildProductGrid(context)),
-        ],
+      body: SafeArea(
+        top: false, // AppBar handles top safety
+        child: Column(
+          children: [
+            _buildSearchBar(context),
+            _buildCategoryFilter(context),
+            Expanded(child: _buildProductGrid(context)),
+          ],
+        ),
       ),
     );
   }
