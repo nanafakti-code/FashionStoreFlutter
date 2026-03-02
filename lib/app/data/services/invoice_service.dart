@@ -47,6 +47,214 @@ class InvoiceService {
     return file;
   }
 
+  /// Genera un PDF de resumen de pedidos (útil para informes diarios/mensuales/anuales)
+  Future<File> generateOrdersSummaryPdf(
+      List<PedidoModel> pedidos, String reportTitle) async {
+    final pdf = pw.Document();
+
+    final headers = ['Nº Pedido', 'Fecha', 'Cliente', 'Total'];
+
+    // Calcular totales
+    double totalRevenue = 0;
+    for (var p in pedidos) {
+      totalRevenue += p.totalEnEuros;
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (context) => [
+          // Header del resumen
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'FashionStore',
+                    style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue900),
+                  ),
+                  pw.Text('Resumen de Ventas'),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text(reportTitle,
+                      style: pw.TextStyle(
+                          fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                      'Generado: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}'),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 30),
+
+          // Resumen rápido
+          pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Total pedidos: ${pedidos.length}',
+                    style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold, fontSize: 14)),
+                pw.Text(
+                    'Ingresos Totales: ${totalRevenue.toStringAsFixed(2)} EUR',
+                    style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 16,
+                        color: PdfColors.green800)),
+              ]),
+          pw.SizedBox(height: 20),
+
+          // Tabla de pedidos
+          pw.TableHelper.fromTextArray(
+            headers: headers,
+            data: pedidos.map((p) {
+              final dateStr = p.fechaCreacion != null
+                  ? '${p.fechaCreacion!.day}/${p.fechaCreacion!.month}/${p.fechaCreacion!.year}'
+                  : 'N/A';
+              return [
+                p.numeroOrden,
+                dateStr,
+                p.nombreCliente ?? 'Cliente Anónimo',
+                '${p.totalEnEuros.toStringAsFixed(2)} EUR',
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+            cellHeight: 30,
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.center,
+              2: pw.Alignment.centerLeft,
+              3: pw.Alignment.centerRight,
+            },
+          ),
+          pw.SizedBox(height: 40),
+          pw.Center(
+            child: pw.Text(
+              'Documento generado por FashionStore Admin',
+              style: pw.TextStyle(
+                  fontStyle: pw.FontStyle.italic, color: PdfColors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final fileName =
+        "Resumen_Ventas_${DateTime.now().millisecondsSinceEpoch}.pdf";
+    final file = File("${output.path}/$fileName");
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
+  /// Genera un PDF de resumen de devoluciones (útil para informes diarios/mensuales/anuales)
+  Future<File> generateReturnsSummaryPdf(
+      List<DevolucionModel> devoluciones, String reportTitle) async {
+    final pdf = pw.Document();
+
+    final headers = ['Nº Devolución', 'Nº Pedido', 'Estado', 'Fecha Solicitud'];
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (context) => [
+          // Header del resumen
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'FashionStore',
+                    style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue900),
+                  ),
+                  pw.Text('Resumen de Devoluciones'),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text(reportTitle,
+                      style: pw.TextStyle(
+                          fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                      'Generado: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}'),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 30),
+
+          // Resumen rápido
+          pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Total devoluciones: ${devoluciones.length}',
+                    style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold, fontSize: 14)),
+              ]),
+          pw.SizedBox(height: 20),
+
+          // Tabla de devoluciones
+          pw.TableHelper.fromTextArray(
+            headers: headers,
+            data: devoluciones.map((d) {
+              final dateStr = d.fechaSolicitud != null
+                  ? '${d.fechaSolicitud!.day}/${d.fechaSolicitud!.month}/${d.fechaSolicitud!.year}'
+                  : 'N/A';
+              return [
+                d.numeroDevolucion,
+                d.ordenId.substring(0, 8), // shorten UUID to avoid overflow
+                d.estado,
+                dateStr,
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+            cellHeight: 30,
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.centerLeft,
+              2: pw.Alignment.center,
+              3: pw.Alignment.centerRight,
+            },
+          ),
+          pw.SizedBox(height: 40),
+          pw.Center(
+            child: pw.Text(
+              'Documento generado por FashionStore Admin',
+              style: pw.TextStyle(
+                  fontStyle: pw.FontStyle.italic, color: PdfColors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final fileName =
+        "Resumen_Devoluciones_${DateTime.now().millisecondsSinceEpoch}.pdf";
+    final file = File("${output.path}/$fileName");
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
   pw.Widget _buildHeader(PedidoModel pedido) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,

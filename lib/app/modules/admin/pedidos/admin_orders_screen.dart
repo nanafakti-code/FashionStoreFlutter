@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import 'admin_orders_controller.dart';
 import '../../../data/models/admin_order.dart';
+import '../../../data/models/pedido_model.dart';
 import '../../../providers/services_providers.dart';
 import 'widgets/order_card.dart';
 import 'widgets/order_detail_dialog.dart';
@@ -151,7 +152,7 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
   }
 
   // ── UI Helpers ─────────────────────────────────────────────────────────────
-  Widget _buildHeader(int count, bool isLoading) {
+  Widget _buildHeader(int count, bool isLoading, List<AdminOrder> allOrders) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -185,9 +186,195 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2)),
+          if (!isLoading && allOrders.isNotEmpty)
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                onPressed: () => _showDownloadOptions(context, allOrders),
+                icon: const Icon(Icons.picture_as_pdf_outlined,
+                    color: AppColors.primary),
+                tooltip: 'Descargar Facturas',
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  void _showDownloadOptions(BuildContext context, List<AdminOrder> allOrders) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Descargar Facturas',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.navy)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.today, color: AppColors.primary),
+                title: const Text('Del día de hoy'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, now.month, now.day);
+                  final end = start.add(const Duration(days: 1));
+                  _downloadBulkInvoices(
+                      allOrders, start, end, 'Ventas del día de hoy');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_view_month,
+                    color: AppColors.primary),
+                title: const Text('De este mes'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, now.month, 1);
+                  final end = DateTime(now.year, now.month + 1, 1);
+                  _downloadBulkInvoices(
+                      allOrders, start, end, 'Ventas de este mes');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_view_week,
+                    color: AppColors.primary),
+                title: const Text('De este año'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, 1, 1);
+                  final end = DateTime(now.year + 1, 1, 1);
+                  _downloadBulkInvoices(
+                      allOrders, start, end, 'Ventas del año');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range, color: AppColors.primary),
+                title: const Text('Filtrar por fecha...'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: AppColors.primary,
+                            onPrimary: Colors.white,
+                            onSurface: AppColors.navy,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    final end = picked.end.add(
+                        const Duration(days: 1)); // Include the end date fully
+                    _downloadBulkInvoices(
+                        allOrders, picked.start, end, 'Ventas Filtradas');
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadBulkInvoices(List<AdminOrder> allOrders, DateTime start,
+      DateTime end, String reportTitle) async {
+    final filtered = allOrders.where((o) {
+      return (o.createdAt.isAfter(start) ||
+              o.createdAt.isAtSameMomentAs(start)) &&
+          o.createdAt.isBefore(end);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('No hay pedidos en el rango seleccionado'),
+              backgroundColor: Colors.orange),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Expanded(
+                  child: Text(
+                      'Generando informe para ${filtered.length} pedidos...')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    try {
+      final orderService = ref.read(orderServiceProvider);
+      final invoiceService = ref.read(invoiceServiceProvider);
+
+      final pedidos = <PedidoModel>[];
+      for (var adminOrder in filtered) {
+        final p = await orderService.getOrderById(adminOrder.id);
+        if (p != null) {
+          pedidos.add(p);
+        }
+      }
+
+      if (pedidos.isEmpty) {
+        if (mounted) {
+          Navigator.pop(context); // close dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Error al obtener los detalles de los pedidos'),
+                backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+
+      final pdfFile =
+          await invoiceService.generateOrdersSummaryPdf(pedidos, reportTitle);
+
+      if (mounted) {
+        Navigator.pop(context); // close dialog
+      }
+
+      await Process.run('cmd', ['/c', 'start', '', pdfFile.path]);
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // close dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildActions() {
@@ -229,7 +416,7 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
       backgroundColor: const Color(0xFFF9F9F9),
       body: Column(
         children: [
-          _buildHeader(filtered.length, state.isLoading),
+          _buildHeader(filtered.length, state.isLoading, state.orders),
           _buildActions(),
           // List
           Expanded(

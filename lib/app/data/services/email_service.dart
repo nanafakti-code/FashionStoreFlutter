@@ -190,13 +190,60 @@ class EmailService {
       final smtpServer = _getSmtpServer();
       final sendReport = await send(message, smtpServer);
       _logger.i(
-          '✅ Correo Newsletter enviado a: $toEmail. Message: ${sendReport.toString()}');
+          '✅ Correo Newsletter enviado a: \$toEmail. Message: \${sendReport.toString()}');
       return true;
     } on MailerException catch (e) {
-      _logger.e('❌ Error enviando correo Newsletter: ${e.message}');
+      _logger.e('❌ Error enviando correo Newsletter: \${e.message}');
       return false;
     } catch (e) {
-      _logger.e('❌ Error inesperado enviando correo Newsletter: $e');
+      _logger.e('❌ Error inesperado enviando correo Newsletter: \$e');
+      return false;
+    }
+  }
+
+  /// Envía un correo de campaña masiva a una lista de suscriptores
+  Future<bool> sendCampaignEmail({
+    required List<String> toEmails,
+    required String subject,
+    required String htmlContent,
+  }) async {
+    final String emailUsername = dotenv.env['SMTP_USER'] ?? '';
+
+    if (emailUsername.isEmpty || emailUsername == 'AQUI_TU_CORREO@gmail.com') {
+      _logger.w(
+          '⚠️ Por favor, configura tu correo real en SMTP_USER en el archivo .env');
+      return true;
+    }
+
+    if (kIsWeb) {
+      _logger.i(
+          '🌐 MODO WEB: Saltando envío real de campaña a \${toEmails.length} destino(s).');
+      return true;
+    }
+
+    if (toEmails.isEmpty) {
+      _logger.w('⚠️ No hay destinatarios para la campaña.');
+      return false;
+    }
+
+    // Usamos Bcc (Copia oculta) para no revelar los emails entre los suscriptores
+    final message = Message()
+      ..from = Address(emailUsername, 'FashionStore')
+      ..bccRecipients.addAll(toEmails)
+      ..subject = subject
+      ..html = htmlContent;
+
+    try {
+      final smtpServer = _getSmtpServer();
+      final sendReport = await send(message, smtpServer);
+      _logger.i(
+          '✅ Campaña enviada a \${toEmails.length} suscriptores. Report: \${sendReport.toString()}');
+      return true;
+    } on MailerException catch (e) {
+      _logger.e('❌ Error enviando campaña masiva: \${e.message}');
+      return false;
+    } catch (e) {
+      _logger.e('❌ Error inesperado enviando campaña masiva: \$e');
       return false;
     }
   }

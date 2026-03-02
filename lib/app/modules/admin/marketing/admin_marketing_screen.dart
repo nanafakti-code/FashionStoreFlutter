@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_spacing.dart';
-import '../../../../config/theme/app_typography.dart';
 import '../../../providers/admin_provider.dart';
+import 'widgets/create_campaign_form.dart';
 
 class AdminMarketingScreen extends ConsumerStatefulWidget {
   const AdminMarketingScreen({super.key});
@@ -72,37 +72,31 @@ class _AdminMarketingScreenState extends ConsumerState<AdminMarketingScreen>
 
   Widget _buildHeader() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      color: AppColors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.grey.shade50, Colors.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        border: const Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
         children: [
-          Row(
+          const Icon(Icons.campaign_rounded, color: AppColors.navy),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                ),
-                child: const Icon(Icons.campaign_rounded,
-                    color: AppColors.primary),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              const Text(
-                'Gestión de Campañas',
-                style: AppTypography.headlineMedium,
-              ),
+              const Text('Gestión de Campañas',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.navy)),
+              const Text('Crea y envía newsletters a tus suscriptores',
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Padding(
-            padding: EdgeInsets.only(left: 48.0),
-            child: Text(
-              'Crea y envía newsletters a tus suscriptores',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
           ),
         ],
       ),
@@ -127,7 +121,12 @@ class _AdminMarketingScreenState extends ConsumerState<AdminMarketingScreen>
         children: [
           ElevatedButton.icon(
             onPressed: () {
-              // TODO: Implement New Campaign Flow
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const CreateCampaignForm(),
+              );
             },
             icon: const Icon(Icons.add, size: 20),
             label: const Text('Nueva campaña',
@@ -295,9 +294,29 @@ class _AdminMarketingScreenState extends ConsumerState<AdminMarketingScreen>
                           ),
                           if (!isSent) // Changed from if (isSent) to if (!isSent)
                             TextButton.icon(
-                              onPressed: () => ref
-                                  .read(adminNotifierProvider.notifier)
-                                  .sendCampaign(c.id),
+                              onPressed: () async {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Enviando campaña...')),
+                                );
+                                final success = await ref
+                                    .read(adminNotifierProvider.notifier)
+                                    .sendCampaign(c.id);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentSnackBar();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(success
+                                          ? 'Campaña enviada exitosamente 🎉'
+                                          : 'Error al enviar la campaña'),
+                                      backgroundColor: success
+                                          ? AppColors.success
+                                          : AppColors.error,
+                                    ),
+                                  );
+                                }
+                              },
                               icon: const Icon(Icons.send_rounded,
                                   size: 16, color: AppColors.orange),
                               label: const Text(

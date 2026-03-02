@@ -12,12 +12,13 @@ class ReviewService {
     try {
       final response = await _supabase
           .from('resenas')
-          .select('*, usuarios(nombre, avatar_url)')
+          .select('*, usuarios(nombre, foto_perfil)')
           .eq('producto_id', productId)
-          .eq('estado', 'Aprobada')
-          .order('fecha_creacion', ascending: false);
+          .inFilter('estado', ['Aprobada', 'Pendiente']).order('creada_en',
+              ascending: false);
       return (response as List).map((r) => ResenaModel.fromJson(r)).toList();
     } catch (e) {
+      print('Error obteniendo reseñas del producto: $e');
       return [];
     }
   }
@@ -50,17 +51,31 @@ class ReviewService {
   /// Obtener elementos susceptibles a recibir una reseña
   Future<List<ReviewableItemModel>> getReviewableItems(String userId) async {
     try {
+      print('🔍 ReviewService: Buscando ordenes para userId=$userId');
       // 1. Obtener todas las órdenes completadas/entregadas de este usuario
       final ordersResponse = await _supabase
           .from('ordenes')
           .select('*, items_orden(*)')
           .eq('usuario_id', userId)
-          .inFilter('estado',
-              ['Completado', 'Entregado']) // Puede ser 'Entregado' en BD
           .order('fecha_creacion', ascending: false);
 
-      final List<PedidoModel> completedOrders =
+      final List<PedidoModel> allOrders =
           (ordersResponse as List).map((o) => PedidoModel.fromJson(o)).toList();
+
+      print('🔍 ReviewService: Total ordenes encontradas: ${allOrders.length}');
+      for (var o in allOrders) {
+        print(
+            '   - Orden ${o.numeroOrden} | estado: "${o.estado}" | items: ${o.items.length}');
+      }
+
+      // Filter for delivered/completed orders
+      final completedOrders = allOrders.where((o) {
+        final estado = o.estado.toLowerCase();
+        return estado == 'entregado' || estado == 'completado';
+      }).toList();
+
+      print(
+          '🔍 ReviewService: Ordenes entregadas/completadas: ${completedOrders.length}');
 
       if (completedOrders.isEmpty) return [];
 
@@ -78,32 +93,39 @@ class ReviewService {
           .map((r) => ResenaModel.fromJson(r))
           .toList();
 
+      print('🔍 ReviewService: Reseñas existentes: ${userReviews.length}');
+
       // 3. Cruzar productos de los pedidos Entregados con las Reseñas
+      // La BD tiene un UNIQUE constraint (usuario, producto, orden),
+      // por lo que solo se permite 1 reseña por producto por pedido.
+      // Deduplicamos para mostrar 1 entrada por producto por pedido.
       List<ReviewableItemModel> reviewableItems = [];
+      final seenKeys = <String>{};
 
       for (var order in completedOrders) {
         for (var item in order.items) {
-          // Check if this specific item in this specific order has a review
-          final existingReviewIndex = userReviews.indexWhere(
-              (r) => r.productoId == item.productoId && r.ordenId == order.id);
+          final key = '${item.productoId}_${order.id}';
+          if (seenKeys.contains(key)) continue;
+          seenKeys.add(key);
 
-          final resenaExistente = existingReviewIndex >= 0
-              ? userReviews[existingReviewIndex]
-              : null;
+          final existingReview = userReviews.cast<ResenaModel?>().firstWhere(
+              (r) => r!.productoId == item.productoId && r.ordenId == order.id,
+              orElse: () => null);
 
           reviewableItems.add(ReviewableItemModel(
             item: item,
             ordenId: order.id,
             fechaCompra: order.fechaCreacion,
-            estaResenado: resenaExistente != null,
-            resenaExistente: resenaExistente,
+            estaResenado: existingReview != null,
+            resenaExistente: existingReview,
           ));
         }
       }
 
+      print('🔍 ReviewService: Items para reseñar: ${reviewableItems.length}');
       return reviewableItems;
     } catch (e) {
-      print('Error obteniendo ReviewableItems: $e');
+      print('❌ Error obteniendo ReviewableItems: $e');
       return [];
     }
   }

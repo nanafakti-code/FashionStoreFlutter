@@ -146,7 +146,8 @@ class _AdminReturnsScreenState extends ConsumerState<AdminReturnsScreen> {
     }
   }
 
-  Widget _buildHeader(int count, bool isLoading) {
+  Widget _buildHeader(
+      int count, bool isLoading, List<DevolucionModel> allReturns) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -180,9 +181,174 @@ class _AdminReturnsScreenState extends ConsumerState<AdminReturnsScreen> {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2)),
+          if (!isLoading && allReturns.isNotEmpty)
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                onPressed: () => _showDownloadOptions(context, allReturns),
+                icon: const Icon(Icons.picture_as_pdf_outlined,
+                    color: AppColors.primary),
+                tooltip: 'Descargar Resumen Devoluciones',
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  void _showDownloadOptions(
+      BuildContext context, List<DevolucionModel> allReturns) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Descargar Resumen Devoluciones',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.navy)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.today, color: AppColors.primary),
+                title: const Text('Del día de hoy'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, now.month, now.day);
+                  final end = start.add(const Duration(days: 1));
+                  _downloadReturnsSummary(
+                      allReturns, start, end, 'Devoluciones del día de hoy');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_view_month,
+                    color: AppColors.primary),
+                title: const Text('De este mes'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, now.month, 1);
+                  final end = DateTime(now.year, now.month + 1, 1);
+                  _downloadReturnsSummary(
+                      allReturns, start, end, 'Devoluciones de este mes');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_view_week,
+                    color: AppColors.primary),
+                title: const Text('De este año'),
+                onTap: () {
+                  Navigator.pop(context);
+                  final now = DateTime.now();
+                  final start = DateTime(now.year, 1, 1);
+                  final end = DateTime(now.year + 1, 1, 1);
+                  _downloadReturnsSummary(
+                      allReturns, start, end, 'Devoluciones del año');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range, color: AppColors.primary),
+                title: const Text('Filtrar por fecha...'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: AppColors.primary,
+                            onPrimary: Colors.white,
+                            onSurface: AppColors.navy,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    final end = picked.end.add(const Duration(days: 1));
+                    _downloadReturnsSummary(allReturns, picked.start, end,
+                        'Devoluciones Filtradas');
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadReturnsSummary(List<DevolucionModel> allReturns,
+      DateTime start, DateTime end, String reportTitle) async {
+    final filtered = allReturns.where((d) {
+      final date = d.fechaSolicitud;
+      if (date == null) return false;
+      return (date.isAfter(start) || date.isAtSameMomentAs(start)) &&
+          date.isBefore(end);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('No hay devoluciones en el rango seleccionado'),
+              backgroundColor: Colors.orange),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Expanded(
+                  child: Text(
+                      'Generando informe para ${filtered.length} devoluciones...')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    try {
+      final invoiceService = ref.read(invoiceServiceProvider);
+      final pdfFile =
+          await invoiceService.generateReturnsSummaryPdf(filtered, reportTitle);
+
+      if (mounted) {
+        Navigator.pop(context); // close dialog
+      }
+
+      await Process.run('cmd', ['/c', 'start', '', pdfFile.path]);
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // close dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildActions() {
@@ -222,7 +388,7 @@ class _AdminReturnsScreenState extends ConsumerState<AdminReturnsScreen> {
       backgroundColor: const Color(0xFFF9F9F9),
       body: Column(
         children: [
-          _buildHeader(filtered.length, state.isLoading),
+          _buildHeader(filtered.length, state.isLoading, devoluciones),
           _buildActions(),
           Expanded(
             child: state.isLoading && devoluciones.isEmpty

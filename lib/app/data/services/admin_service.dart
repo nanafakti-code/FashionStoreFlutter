@@ -5,6 +5,7 @@ import '../../data/models/resena_model.dart';
 import '../../data/models/extra_models.dart';
 import '../../data/models/devolucion_model.dart';
 import '../../data/models/coupon_model.dart';
+import 'email_service.dart';
 
 class AdminService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -616,16 +617,47 @@ class AdminService {
 
   Future<bool> sendCampaign(String id) async {
     try {
-      // TODO: Integrar con Resend API
-      // Por ahora simulamos el envío actualizando el estado
+      // 1. Obtener los datos de la campaña
+      final campaignData =
+          await _supabase.from('campanas_email').select().eq('id', id).single();
+
+      final asnt = campaignData['asunto'] as String;
+      final html = campaignData['contenido_html'] as String;
+      final seg = campaignData['tipo_segmento'] as String?;
+
+      // 2. Obtener la lista de suscriptores según el segmento
+      final subs = await getNewsletterSubscribers();
+      List<String> emails = [];
+
+      if (seg == 'Todos' || seg == 'Todos los suscriptores' || seg == null) {
+        emails = subs.map((s) => s.email).toList();
+      } else {
+        // Por el momento, si hubiese más segmentos se filtrarían aquí
+        emails = subs.map((s) => s.email).toList();
+      }
+
+      if (emails.isEmpty) return false;
+
+      // 3. Importar y usar EmailService
+      final emailService = EmailService();
+      final sent = await emailService.sendCampaignEmail(
+        toEmails: emails,
+        subject: asnt,
+        htmlContent: html,
+      );
+
+      if (!sent) return false;
+
+      // 4. Actualizar la base de datos
       await _supabase.from('campanas_email').update({
         'estado': 'Enviada',
         'fecha_envio': DateTime.now().toIso8601String(),
-        'total_enviados': 100, // Simulación
+        'total_enviados': emails.length,
       }).eq('id', id);
+
       return true;
     } catch (e) {
-      print('Error sending campaign via Supabase: $e');
+      print('Error sending campaign via Supabase: \$e');
       return false;
     }
   }

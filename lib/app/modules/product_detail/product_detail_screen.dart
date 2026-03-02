@@ -20,6 +20,8 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  bool _showAllReviews = false;
+
   @override
   void initState() {
     super.initState();
@@ -92,7 +94,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         children: [
           _buildImageGallery(context, state),
           _buildInfo(context, state),
-          if (state.reviews.isNotEmpty) _buildReviewsSection(context, state),
           if (state.relatedProducts.isNotEmpty)
             _buildRelatedSection(context, state),
           const SizedBox(height: 100),
@@ -414,6 +415,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           const SizedBox(height: 16),
           if (p.material != null || p.color != null || p.genero != null)
             _buildDetails(p),
+          // Reseñas (siempre visible, debajo de Detalles)
+          const SizedBox(height: 8),
+          _buildReviewsSection(context, state),
         ],
       ),
     );
@@ -454,67 +458,85 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   Widget _buildReviewsSection(BuildContext context, ProductDetailState state) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Divider(),
-          Text('Reseñas (${state.reviews.length})',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          ...state.reviews.take(5).map((r) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          ...List.generate(
-                              5,
-                              (i) => Icon(
-                                    i < r.calificacion
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    size: 16,
-                                    color: AppColors.gold,
-                                  )),
-                          const Spacer(),
-                          if (r.verificadaCompra)
-                            const Row(
-                              children: [
-                                Icon(Icons.verified,
-                                    size: 14, color: AppColors.success),
-                                SizedBox(width: 4),
-                                Text('Compra verificada',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.success)),
-                              ],
-                            ),
-                        ],
-                      ),
-                      if (r.titulo != null) ...[
-                        const SizedBox(height: 4),
-                        Text(r.titulo!,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+    final reviewsToShow =
+        _showAllReviews ? state.reviews : state.reviews.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(),
+        Text('Reseñas (${state.reviews.length})',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        if (state.reviews.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text('Sin reseñas aún',
+                  style:
+                      TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+            ),
+          ),
+        ...reviewsToShow.map((r) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        ...List.generate(
+                            5,
+                            (i) => Icon(
+                                  i < r.calificacion
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  size: 16,
+                                  color: AppColors.gold,
+                                )),
+                        const Spacer(),
+                        if (r.verificadaCompra)
+                          const Row(
+                            children: [
+                              Icon(Icons.verified,
+                                  size: 14, color: AppColors.success),
+                              SizedBox(width: 4),
+                              Text('Compra verificada',
+                                  style: TextStyle(
+                                      fontSize: 11, color: AppColors.success)),
+                            ],
+                          ),
                       ],
+                    ),
+                    if (r.titulo != null) ...[
                       const SizedBox(height: 4),
-                      Text(r.comentario ?? '',
-                          style:
-                              const TextStyle(color: AppColors.textSecondary)),
+                      Text(r.titulo!,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
                     ],
-                  ),
+                    const SizedBox(height: 4),
+                    Text(r.comentario ?? '',
+                        style: const TextStyle(color: AppColors.textSecondary)),
+                  ],
                 ),
-              )),
-        ],
-      ),
+              ),
+            )),
+        if (state.reviews.length > 3)
+          Center(
+            child: TextButton(
+              onPressed: () =>
+                  setState(() => _showAllReviews = !_showAllReviews),
+              child: Text(
+                _showAllReviews ? 'Mostrar menos' : 'Mostrar más reseñas',
+                style: const TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
