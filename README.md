@@ -1,175 +1,186 @@
-# FashionStore Flutter
+# 🚀 Fashion Store: E-Commerce de Electrónica Reacondicionada
 
-Aplicación de e-commerce de moda migrada desde Astro a Flutter, manteniendo la misma base de datos (Supabase), lógica de negocio, diseño visual y funcionalidades.
+---
 
-## Arquitectura
+<div align="center">
+  <img src="assets/images/app_icon.png" width="150" alt="Fashion Store Logo">
+  <p align="center">
+    <strong>Una experiencia premium para dar una segunda vida a la tecnología.</strong>
+  </p>
 
-- **Framework**: Flutter 3.x + Dart >=3.3.4
-- **State Management**: GetX (MVVM)
-- **Backend**: Supabase (Auth + PostgreSQL + Storage)
-- **Pagos**: Stripe
-- **Estructura**: Controllers → Services → Supabase
+  [![Flutter](https://img.shields.io/badge/Flutter-3.3.4%2B-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+  [![Dart](https://img.shields.io/badge/Dart-2.18%2B-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+  [![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+  [![Stripe](https://img.shields.io/badge/Payments-Stripe-635BFF?logo=stripe&logoColor=white)](https://stripe.com)
+  [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+</div>
 
-```
-lib/
-├── main.dart                    # Entry point + registro global de servicios
-├── config/
-│   ├── theme/
-│   │   ├── app_colors.dart      # Paleta FashionStore (Navy, Cream, Gold, Green)
-│   │   └── app_theme.dart       # Material 3 theme con Poppins
-│   ├── constants.dart           # Constantes (envío, IVA, timeouts)
-│   └── env_config.dart          # Variables de entorno (.env)
-└── app/
-    ├── routes/
-    │   ├── app_routes.dart      # Definición de rutas (15 rutas)
-    │   └── app_pages.dart       # Registro de páginas con bindings
-    ├── bindings/
-    │   └── app_binding.dart     # 10 binding classes (DI por pantalla)
-    ├── controllers/             # 11 controllers GetX
-    ├── data/
-    │   ├── models/              # ProductoModel, CarritoModel, PedidoModel, etc.
-    │   ├── services/            # 7 servicios (Auth, Cart, Order, Admin, etc.)
-    │   └── repositories/        # ProductoRepository, CategoriaRepository
-    ├── modules/                 # Pantallas organizadas por feature
-    │   ├── home/
-    │   ├── product_detail/
-    │   ├── auth/ (login, register)
-    │   ├── checkout/
-    │   ├── profile/
-    │   ├── orders/
-    │   ├── wishlist/
-    │   ├── search/
-    │   └── admin/ (login, dashboard con 8 tabs)
-    ├── widgets/                 # ProductCard, CommonWidgets
-    └── utils/                   # ResponsiveHelper
-```
+---
 
-## Funcionalidades
+## 🚀 Descripción del Proyecto
 
-### Usuario
-- Catálogo de productos con filtros por categoría y búsqueda
-- Detalle de producto con galería de imágenes y reseñas
-- Carrito de compra (offline-first con SharedPreferences)
-- Checkout con dirección de envío, cupones de descuento y resumen
-- Gestión de pedidos (historial, detalle, cancelación)
-- Lista de deseos (favoritos)
-- Perfil de usuario con direcciones guardadas
-- Autenticación (login, registro, recuperación de contraseña)
+**Fashion Store** es una plataforma de comercio electrónico móvil moderna y ágil, diseñada específicamente para el mercado de **productos electrónicos reacondicionados** (smartphones, portátiles, tablets y accesorios).
 
-### Administrador
-- Dashboard con estadísticas (productos, pedidos, usuarios, ingresos)
-- CRUD de productos
-- Gestión de pedidos (cambio de estado)
-- Gestión de usuarios (roles)
-- Moderación de reseñas
-- Cupones de descuento (crear, validar, eliminar)
-- Devoluciones
-- Campañas de email / Newsletter
+### El Problema
+La compra de tecnología de segunda mano a menudo genera desconfianza debido a la falta de garantías, descripciones imprecisas y procesos de compra poco seguros. Muchos usuarios quieren ahorrar y ayudar al medio ambiente, pero temen recibir un producto defectuoso.
 
-## Requisitos
+### Nuestra Solución
+Fashion Store resuelve esto mediante un entorno **B2C (Business to Consumer)** profesional. Ofrecemos una experiencia de usuario premium que iguala a la de las grandes tiendas de productos nuevos, garantizando:
+- **Transparencia total** en el estado físico del dispositivo (Como nuevo, Muy bueno, Correcto).
+- **Seguridad** en los pagos a través de Stripe.
+- **Confianza** mediante un sistema nativo de reseñas verificadas y soporte de devoluciones.
+- **Economía Circular**: Reducción de la basura electrónica (e-waste) facilitando el acceso a hardware de alta gama a precios reducidos.
 
-- Flutter SDK >=3.3.4
-- Dart SDK >=3.3.4
-- Cuenta de Supabase con base de datos configurada
-- Cuenta de Stripe (clave publicable)
+---
 
-## Instalación
+## ✨ Características Principales
 
-### 1. Instalar dependencias
+### 👤 Experiencia del Cliente
+- **Catálogo Dinámico**: Filtros avanzados por marca, categoría y estado estético.
+- **Gestión de Stock en Tiempo Real**: Sistema de reservas automáticas al añadir al carrito para evitar el *overselling*.
+- **Checkout Seguro**: Pasarela de pago integrada con Stripe cumpliendo estándares PCI.
+- **Post-Venta Proactiva**: Historial de pedidos, descarga de facturas en PDF y sistema de tickets de devolución.
+- **Fidelización**: Sistema de cupones de descuento y suscripción a Newsletter con recompensas automáticas.
+- **Reseñas Verificadas**: Valoraciones reales asociadas a pedidos entregados para garantizar la veracidad.
 
-```bash
-flutter pub get
-```
+### 👑 Panel de Administración (CRM Embebido)
+- **Dashboard Estadístico**: Gráficos de ventas y métricas de rendimiento en tiempo real (`fl_chart`).
+- **Gestión de Inventario**: Control total sobre productos, marcas y variantes (almacenamiento, colores, stock).
+- **Moderación**: Sistema de aprobación/rechazo de reseñas y gestión de solicitudes de devolución.
+- **Marketing Automation**: Generación de cupones masivos y envío de campañas de correo electrónico (SMTP).
+- **Reportería**: Generación de resúmenes diarios, mensuales y anuales de ventas y devoluciones en PDF.
 
-### 2. Configurar variables de entorno
+---
 
-Crear archivo `.env` en la raíz del proyecto:
+## 🧱 Arquitectura y Stack Tecnológico
+
+La aplicación sigue el patrón de **Arquitectura por Características (Feature-based)** con una separación clara de responsabilidades (Model-View-Controller adaptado), asegurando escalabilidad y mantenibilidad.
+
+### Stack Técnico
+- **Framework:** [Flutter](https://flutter.dev) (Rendimiento nativo multiplataforma).
+- **Lenguaje:** [Dart](https://dart.dev) (Tipado fuerte y Null-safety).
+- **Gestión de Estado:** [Riverpod](https://riverpod.dev) (Inmutable, testable y reactivo).
+- **Navegación:** [GoRouter](https://pub.dev/packages/go_router) (Rutas declarativas y Deep Linking).
+- **Backend:** [Supabase](https://supabase.com) (PostgreSQL, Auth, Storage y Realtime).
+- **Pasarela de Pagos:** [Stripe](https://stripe.com) (Seguridad bancaria internacional).
+- **Generación de Modelos:** [Freezed](https://pub.dev/packages/freezed) & [JSON Serializable](https://pub.dev/packages/json_serializable).
+
+---
+
+## 📱 Capturas de Pantalla (Placeholders)
+
+| Home Screen | Product Detail | Admin Dashboard |
+| :---: | :---: | :---: |
+| ![Home](https://via.placeholder.com/200x400?text=Home+Feed) | ![Detail](https://via.placeholder.com/200x400?text=Product+Details) | ![Admin](https://via.placeholder.com/200x400?text=Admin+Panel) |
+
+---
+
+## ⚙️ Instalación y Puesta en Marcha
+
+### Requisitos Previos
+- Flutter SDK `>= 3.3.4`
+- Dart SDK `>= 2.18.0`
+- Un proyecto activo en [Supabase](https://app.supabase.com/)
+
+### Pasos
+1. **Clonar el repositorio**
+   ```bash
+   git clone https://github.com/tu-usuario/fashion_store_flutter.git
+   cd fashion_store_flutter
+   ```
+
+2. **Instalar dependencias**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Generar código (Modelos y Providers)**
+   ```bash
+   flutter pub run build_runner build --delete-conflicting-outputs
+   ```
+
+4. **Configurar variables de entorno**
+   Crea un archivo `.env` en la raíz (ver sección de Variables de Entorno).
+
+5. **Ejecutar la aplicación**
+   ```bash
+   flutter run
+   ```
+
+---
+
+## 🔐 Variables de Entorno
+
+Crea un archivo llamado `.env` en la raíz del proyecto con el siguiente formato:
 
 ```env
+# Supabase Configuration
 SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_ANON_KEY=tu-anon-key
-STRIPE_PUBLISHABLE_KEY=pk_test_tu-stripe-key
-APP_URL=http://localhost:4321
+SUPABASE_ANON_KEY=tu-anon-key-aqui
+
+# Stripe Configuration
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# SMTP Configuration (para envío de facturas y marketing)
+SMTP_USER=no-reply@tudominio.com
+SMTP_PASS=tu-password-smtp
 ```
 
-### 3. Tablas requeridas en Supabase
+---
 
-| Tabla | Descripción |
-|-------|-------------|
-| `usuarios` | Perfiles de usuario (nombre, email, rol, teléfono, avatar) |
-| `productos` | Catálogo de productos (nombre, precio, stock, descripción) |
-| `categorias` | Categorías de productos |
-| `marcas` | Marcas de productos |
-| `imagenes_producto` | Imágenes asociadas a productos |
-| `ordenes` | Pedidos realizados |
-| `orden_items` | Items de cada pedido |
-| `cart_items` | Carrito persistente en servidor |
-| `resenas` | Reseñas de productos |
-| `lista_deseos` | Favoritos del usuario |
-| `direcciones` | Direcciones de envío guardadas |
-| `cupones_descuento` | Cupones de descuento |
-| `devoluciones` | Solicitudes de devolución |
-| `newsletter_subscriptions` | Suscripciones al newsletter |
-| `campanas_email` | Campañas de email marketing |
+## 🧪 Testing
 
-### 4. Ejecutar
+Para ejecutar la suite de pruebas unitarias y de widgets:
 
 ```bash
-# Web
-flutter run -d chrome
-
-# Android
-flutter run -d android
-
-# iOS
-flutter run -d ios
+flutter test
 ```
 
-## Paleta de Colores
+*Nota: Utilizamos `Mocktail` para el mockeo de servicios y `ProviderContainer` para pruebas aisladas de lógica de negocio.*
 
-| Color | Hex | Uso |
-|-------|-----|-----|
-| Navy | `#102A43` | Color primario, headers |
-| Charcoal | `#1A1A1A` | Textos principales |
-| Cream | `#F1ECE3` | Fondos, backgrounds |
-| Gold | `#D4A574` | Acentos, categorías, detalles |
-| Green | `#00AA45` | CTAs, botones de acción, precios |
+---
 
-## Dependencias principales
+## 📦 Estructura del Proyecto
 
-| Paquete | Versión | Uso |
-|---------|---------|-----|
-| `get` | ^4.6.6 | State management, DI, routing |
-| `supabase_flutter` | ^2.3.0 | Backend, auth, database |
-| `flutter_stripe` | ^10.1.0 | Pagos con Stripe |
-| `cached_network_image` | ^3.3.0 | Caché de imágenes |
-| `flutter_dotenv` | ^5.1.0 | Variables de entorno |
-| `flutter_secure_storage` | ^9.0.0 | Almacenamiento seguro |
-| `shared_preferences` | ^2.5.3 | Persistencia local (carrito) |
-| `shimmer` | ^3.0.0 | Efectos de carga |
-| `flutter_svg` | ^2.2.0 | Iconos SVG |
-| `intl` | ^0.20.0 | Formateo de fechas/números |
+```text
+lib/
+├── app/
+│   ├── data/           # Modelos (Freezed) y Servicios (Repositorios API)
+│   ├── modules/        # UI por características (auth, cart, home, admin, etc.)
+│   └── providers/      # Lógica de negocio y gestión de estado (Riverpod)
+├── config/             # Temas, Rutas centralizadas y Constantes
+├── core/               # Utilidades, formateadores y helpers transversales
+└── main.dart           # Inicialización de Supabase y punto de entrada
+```
 
-## Credenciales de Admin
+---
 
-Email: `admin@fashionstore.com`
-(La contraseña se configura en Supabase Auth)
+## 🚧 Roadmap / Mejoras Futuras
 
-## Pantallas
+- [ ] **Multilenguaje (i18n)**: Soporte completo para Inglés y otros mercados europeos.
+- [ ] **Notificaciones Push**: Integrar Firebase Cloud Messaging para avisos de pedidos y carritos abandonados.
+- [ ] **Buscador con IA**: Implementar búsqueda semántica para encontrar productos por lenguaje natural.
+- [ ] **Admin Web Panel**: Versión de escritorio exclusiva para la gestión masiva de inventario.
 
-| Ruta | Pantalla | Descripción |
-|------|----------|-------------|
-| `/` | Home | Productos destacados, categorías |
-| `/products` | Productos | Catálogo completo con filtros |
-| `/product-detail` | Detalle | Imágenes, info, reseñas, añadir al carrito |
-| `/cart` | Carrito | Items, cantidades, total |
-| `/checkout` | Checkout | Envío, cupón, resumen, pagar |
-| `/login` | Login | Inicio de sesión |
-| `/register` | Registro | Crear cuenta |
-| `/profile` | Perfil | Datos del usuario, menú |
-| `/orders` | Pedidos | Historial de pedidos |
-| `/order-detail` | Detalle pedido | Items, totales, estado |
-| `/wishlist` | Favoritos | Lista de deseos |
-| `/search` | Búsqueda | Buscar productos con filtros |
-| `/admin-login` | Admin Login | Acceso al panel admin |
-| `/admin` | Admin Dashboard | 8 tabs de gestión |
+---
+
+## 🤝 Contribución
+
+¡Las contribuciones son lo que hacen a la comunidad de código abierto un lugar increíble!
+1. Haz un **Fork** del proyecto.
+2. Crea una nueva **Rama** (`git checkout -b feature/AmazingFeature`).
+3. Haz **Commit** de tus cambios (`git commit -m 'Add AmazingFeature'`).
+4. Haz **Push** a la rama (`git push origin feature/AmazingFeature`).
+5. Abre un **Pull Request**.
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
+
+---
+
+<div align="center">
+  <p>Desarrollado con ❤️ para transformar el comercio de electrónica reacondicionada.</p>
+</div>
