@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import 'admin_orders_controller.dart';
@@ -137,8 +137,8 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
       // Generate the PDF
       final pdfFile = await invoiceService.generateInvoicePdf(pedido);
 
-      // Open the PDF
-      await Process.run('cmd', ['/c', 'start', '', pdfFile.path]);
+      // Open the PDF with the system viewer (works on Android, iOS, Windows, macOS)
+      await OpenFile.open(pdfFile.path);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -366,7 +366,7 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
         Navigator.pop(context); // close dialog
       }
 
-      await Process.run('cmd', ['/c', 'start', '', pdfFile.path]);
+      await OpenFile.open(pdfFile.path);
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // close dialog

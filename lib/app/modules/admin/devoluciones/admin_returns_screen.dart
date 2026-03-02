@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../providers/admin_provider.dart';
@@ -132,8 +132,8 @@ class _AdminReturnsScreenState extends ConsumerState<AdminReturnsScreen> {
       final pdfFile =
           await invoiceService.generateRefundPdf(pedido, devolucionConPedido);
 
-      // Open the PDF on Windows
-      await Process.run('cmd', ['/c', 'start', '', pdfFile.path]);
+      // Open the PDF with the system viewer (works on Android, iOS, Windows, macOS)
+      await OpenFile.open(pdfFile.path);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -340,7 +340,7 @@ class _AdminReturnsScreenState extends ConsumerState<AdminReturnsScreen> {
         Navigator.pop(context); // close dialog
       }
 
-      await Process.run('cmd', ['/c', 'start', '', pdfFile.path]);
+      await OpenFile.open(pdfFile.path);
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // close dialog

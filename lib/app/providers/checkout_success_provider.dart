@@ -47,6 +47,15 @@ class CheckoutSuccessNotifier extends StateNotifier<CheckoutSuccessState> {
       return;
     }
 
+    // Android Payment Sheet flow: the Stripe SDK already confirmed the payment
+    // before navigating here, so there is no checkout session to query.
+    // Skip the Stripe API call and mark the order as paid directly.
+    if (sessionId == 'pi_success') {
+      print('🔍 StripeVerify: Pago con Payment Sheet confirmado. Marcando como pagado.');
+      await _confirmOrderAsPaid(orderId, metadata: null);
+      return;
+    }
+
     try {
       final dio = Dio();
       final response = await dio.get(
@@ -64,97 +73,7 @@ class CheckoutSuccessNotifier extends StateNotifier<CheckoutSuccessState> {
         print('🔍 StripeVerify: Respuesta Stripe OK. Status: $paymentStatus');
 
         if (paymentStatus == 'paid') {
-          // 1. Consultar estado actual antes de actualizar
-          final preOrder =
-              await ref.read(orderServiceProvider).getOrderById(orderId);
-          final isFirstTimePaid =
-              preOrder != null && preOrder.estado != 'Pagado';
-
-          // 2. Update Order Status
-          final success = await ref
-              .read(orderServiceProvider)
-              .updateOrderStatus(orderId, 'Pagado');
-          if (success) {
-            // Clear Cart Globally (updates UI automatically)
-            await ref.read(cartNotifierProvider.notifier).clearCart();
-
-            // Clear Global Reservations
-            final userId = response.data['metadata']?['user_id'];
-            if (userId != null) {
-              await ref
-                  .read(productServiceProvider)
-                  .clearUserReservations(userId.toString());
-            }
-
-            // Fetch Final Order Details
-            final order =
-                await ref.read(orderServiceProvider).getOrderById(orderId);
-
-            if (order != null && isFirstTimePaid) {
-              // Enviar factura PDF por email SOLO si es la primera vez que se marca como pagado
-              ref
-                  .read(invoiceServiceProvider)
-                  .generateInvoicePdf(order)
-                  .then((pdfFile) {
-                ref
-                    .read(invoiceServiceProvider)
-                    .sendInvoiceEmail(order, pdfFile);
-              }).catchError((e) {
-                print('Error enviando factura: $e');
-              });
-            }
-
-            state = state.copyWith(
-              isLoading: false,
-              isSuccess: true,
-              message: '¡Pago registrado correctamente!',
-              order: order,
-            );
-
-            // Redeem Coupon if present in metadata
-            try {
-              final metadata = response.data['metadata'];
-              if (metadata != null && metadata['coupon_id'] != null) {
-                final couponId = int.tryParse(metadata['coupon_id'].toString());
-                final uId = metadata['user_id']; // Changed userId to uId
-                // discount_amount in metadata is in cents (String), redeemCoupon expects Amount (Euros or logic?)
-                // Controller passed: discountAmount (double from metadata)
-                // Service redeemCoupon: discountAmount
-
-                final discountAmountStr = metadata['discount_amount'];
-                double discountAmount = 0.0;
-                if (discountAmountStr != null) {
-                  discountAmount =
-                      double.tryParse(discountAmountStr.toString()) ?? 0.0;
-                }
-
-                if (couponId != null && uId != null) {
-                  // Changed userId to uId
-                  // Note: discountAmount in metadata is total cents.
-                  // Service redeemCoupon expects... amount?
-                  // Controller passed it directly. Let's assume service handles it or we convert.
-                  // Viewing CheckoutController, it passed `state.discountAmount / 100` (Euros).
-                  // Here we have it in cents (from CheckoutNotifier metadata).
-                  // So we should divide by 100.
-
-                  await ref.read(couponServiceProvider).redeemCoupon(
-                        couponId: couponId,
-                        userId: uId.toString(), // Changed userId to uId
-                        orderId: orderId,
-                        discountAmount: discountAmount / 100,
-                      );
-                }
-              }
-            } catch (e) {
-              print('Error redeeming coupon: $e');
-            }
-          } else {
-            state = state.copyWith(
-              isLoading: false,
-              isSuccess: false,
-              message: 'Pago exitoso, pero error al actualizar el pedido.',
-            );
-          }
+          await _confirmOrderAsPaid(orderId, metadata: response.data['metadata']);
         } else {
           state = state.copyWith(
             isLoading: false,
@@ -175,6 +94,87 @@ class CheckoutSuccessNotifier extends StateNotifier<CheckoutSuccessState> {
         isLoading: false,
         isSuccess: false,
         message: 'Error de conexión: $e',
+      );
+    }
+  }
+
+  /// Marks the order as paid, clears the cart/reservations, sends the invoice,
+  /// and redeems any coupon stored in [metadata].
+  Future<void> _confirmOrderAsPaid(String orderId, {Map<String, dynamic>? metadata}) async {
+    // 1. Check current order state to avoid duplicate processing
+    final preOrder = await ref.read(orderServiceProvider).getOrderById(orderId);
+    final isFirstTimePaid = preOrder != null && preOrder.estado != 'Pagado';
+
+    // 2. Update Order Status
+    final success = await ref
+        .read(orderServiceProvider)
+        .updateOrderStatus(orderId, 'Pagado');
+
+    if (success) {
+      // Clear Cart Globally (updates UI automatically)
+      await ref.read(cartNotifierProvider.notifier).clearCart();
+
+      // Clear Global Reservations
+      final userId = metadata?['user_id'];
+      if (userId != null) {
+        await ref
+            .read(productServiceProvider)
+            .clearUserReservations(userId.toString());
+      }
+
+      // Fetch Final Order Details
+      final order = await ref.read(orderServiceProvider).getOrderById(orderId);
+
+      if (order != null && isFirstTimePaid) {
+        // Send invoice PDF by email only the first time the order is marked as paid
+        ref
+            .read(invoiceServiceProvider)
+            .generateInvoicePdf(order)
+            .then((pdfFile) {
+          ref.read(invoiceServiceProvider).sendInvoiceEmail(order, pdfFile);
+        }).catchError((e) {
+          print('Error enviando factura: $e');
+        });
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: true,
+        message: '¡Pago registrado correctamente!',
+        order: order,
+      );
+
+      // Redeem Coupon if present in metadata
+      if (metadata != null) {
+        try {
+          if (metadata['coupon_id'] != null) {
+            final couponId = int.tryParse(metadata['coupon_id'].toString());
+            final uId = metadata['user_id'];
+            final discountAmountStr = metadata['discount_amount'];
+            double discountAmount = 0.0;
+            if (discountAmountStr != null) {
+              discountAmount =
+                  double.tryParse(discountAmountStr.toString()) ?? 0.0;
+            }
+
+            if (couponId != null && uId != null) {
+              await ref.read(couponServiceProvider).redeemCoupon(
+                    couponId: couponId,
+                    userId: uId.toString(),
+                    orderId: orderId,
+                    discountAmount: discountAmount / 100,
+                  );
+            }
+          }
+        } catch (e) {
+          print('Error redeeming coupon: $e');
+        }
+      }
+    } else {
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: false,
+        message: 'Pago exitoso, pero error al actualizar el pedido.',
       );
     }
   }

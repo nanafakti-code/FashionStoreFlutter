@@ -7,9 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart'; // Ensure GoRouter type is available
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_stripe/flutter_stripe.dart'; // Added Stripe import
 import 'app/data/services/supabase_service.dart';
 import 'app/routes/app_router.dart';
 import 'config/theme/app_theme.dart';
+import 'config/stripe_config.dart'; // Added StripeConfig import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +40,12 @@ void main() async {
     await Hive.initFlutter();
     await Hive.openBox('cart_box');
     print('✅ Hive initialized');
+
+    // Initialize Stripe
+    Stripe.publishableKey = StripeConfig.publicKey;
+    // Optional: wait for Stripe to initialize
+    await Stripe.instance.applySettings();
+    print('✅ Stripe initialized');
 
     runApp(
       const ProviderScope(

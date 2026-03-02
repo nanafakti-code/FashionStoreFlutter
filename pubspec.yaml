@@ -55,6 +55,7 @@ dependencies:
   path_provider: ^2.1.5
   package_info_plus: ^9.0.0
   fl_chart: ^1.1.1
+  open_file: ^3.3.2
   flutter_localizations:
     sdk: flutter
 

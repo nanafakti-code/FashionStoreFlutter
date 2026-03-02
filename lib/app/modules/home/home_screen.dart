@@ -11,7 +11,6 @@ import '../../widgets/product_card.dart';
 import '../../widgets/promo_section.dart';
 import '../../widgets/hero_banner.dart';
 import '../../widgets/custom_app_bar.dart';
-import 'widgets/newsletter_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +25,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     // Load featured products when screen initiates
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
       ref.read(productNotifierProvider.notifier).loadFeaturedProducts();
     });
   }
@@ -48,7 +46,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const HeroBannerWidget(),
               _buildPromoSection(context),
               _buildFeaturedSection(context),
-              const NewsletterSection(),
             ],
           ),
         ),

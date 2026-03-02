@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
 import '../../config/stripe_config.dart';
 import 'package:fashion_store_flutter/app/routes/app_router.dart';
@@ -227,12 +228,18 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
         // Coupon redemption is now handled in Stripe success verification using metadata
 
-        // Create Stripe Session
-        final url = await _createStripeSession(
-            order.id, items, userId, total, state.email, localServerPort);
+        // Create Stripe Session or Payment Intent depending on platform
+        String? urlOrPi;
+        if (!kIsWeb && Platform.isAndroid) {
+          urlOrPi = await _createPaymentIntent(
+              order.id, items, userId, total, state.email);
+        } else {
+          urlOrPi = await _createStripeSession(
+              order.id, items, userId, total, state.email, localServerPort);
+        }
 
         state = state.copyWith(isLoading: false);
-        return url;
+        return urlOrPi;
       } else {
         state = state.copyWith(
             isLoading: false, error: 'Error al crear el pedido localmente');
@@ -386,6 +393,51 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       return null;
     } catch (e) {
       print('Stripe Error: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _createPaymentIntent(
+      String orderId,
+      List<Map<String, dynamic>> items,
+      String? userId,
+      int totalCents,
+      String userEmail) async {
+    try {
+      final dio = Dio();
+      final options = Options(
+        contentType: Headers.formUrlEncodedContentType,
+        headers: {
+          'Authorization': 'Bearer ${StripeConfig.secretKey}',
+        },
+      );
+
+      final Map<String, dynamic> data = {
+        'amount': totalCents.toString(),
+        'currency': 'eur',
+        'receipt_email': userEmail,
+        'metadata[order_id]': orderId,
+        'metadata[user_id]': userId ?? 'guest',
+      };
+
+      if (state.appliedCoupon != null && state.discountAmount > 0) {
+        data['metadata[coupon_id]'] = state.appliedCoupon!.id.toString();
+        data['metadata[discount_amount]'] = state.discountAmount.toString();
+      }
+
+      final response = await dio.post(
+        'https://api.stripe.com/v1/payment_intents',
+        data: data,
+        options: options,
+      );
+
+      if (response.statusCode == 200) {
+        final clientSecret = response.data['client_secret'];
+        return 'android_pi:$clientSecret';
+      }
+      return null;
+    } catch (e) {
+      print('Stripe PaymentIntent Error: $e');
       return null;
     }
   }

@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import '../../routes/app_router.dart';
 import 'dart:io' show Platform;
 import 'widgets/windows_payment_server.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -188,7 +189,37 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
 
     if (url != null) {
-      if (await canLaunchUrl(Uri.parse(url))) {
+      if (url.startsWith('android_pi:')) {
+        final clientSecret = url.substring('android_pi:'.length);
+        try {
+          await Stripe.instance.initPaymentSheet(
+            paymentSheetParameters: SetupPaymentSheetParameters(
+              paymentIntentClientSecret: clientSecret,
+              merchantDisplayName: 'Fashion Store',
+            ),
+          );
+          await Stripe.instance.presentPaymentSheet();
+
+          if (mounted) {
+            final completedOrder =
+                ref.read(checkoutNotifierProvider).completedOrder;
+            if (completedOrder != null) {
+              context.go(
+                  '${AppRoutes.checkoutSuccess}?session_id=pi_success&order_id=${completedOrder.id}');
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            String errorMsg = 'Pago cancelado o fallido';
+            if (e is StripeException) {
+              errorMsg = e.error.localizedMessage ?? errorMsg;
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(errorMsg)),
+            );
+          }
+        }
+      } else if (await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(
           Uri.parse(url),
           mode: kIsWeb

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../data/models/producto_model.dart';
+import '../providers/cart_provider.dart';
 import '../../config/theme/app_colors.dart';
 import '../../config/theme/app_spacing.dart';
 import '../../config/theme/app_typography.dart';
@@ -43,9 +44,8 @@ class _ProductCardState extends ConsumerState<ProductCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          transform: _hovered
-              ? (Matrix4.identity()..scale(1.02, 1.02))
-              : Matrix4.identity(),
+          transform:
+              _hovered ? (Matrix4.identity()..scale(1.02)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Card(
             clipBehavior: Clip.antiAlias,
@@ -55,7 +55,7 @@ class _ProductCardState extends ConsumerState<ProductCard> {
               borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
               side: BorderSide(
                 color: _hovered
-                    ? AppColors.primary.withValues(alpha: 0.25)
+                    ? AppColors.primary.withOpacity(0.25)
                     : AppColors.border,
                 width: _hovered ? 1.0 : 0.5,
               ),
@@ -289,10 +289,47 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                   width: double.infinity,
                   height: btnH,
                   child: ElevatedButton(
-                    onPressed: () =>
-                        context.push('/product/${widget.producto.id}'),
+                    onPressed: widget.producto.tieneStock
+                        ? () async {
+                            // Pick the first available variant (if any)
+                            final variant =
+                                widget.producto.variantes?.firstOrNull;
+                            final success = await ref
+                                .read(cartNotifierProvider.notifier)
+                                .addItem(
+                                  productId: widget.producto.id,
+                                  productName: widget.producto.nombre,
+                                  price: widget.producto.precioVenta,
+                                  quantity: 1,
+                                  image: widget.producto.imagenPrincipal,
+                                  talla: variant?.talla,
+                                  color: variant?.color,
+                                  capacidad: variant?.capacidad,
+                                  variantId: variant?.id,
+                                  maxStock: variant?.stock ?? widget.producto.stockTotal,
+                                );
+
+                            if (success && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${widget.producto.nombre} añadido al carrito',
+                                  ),
+                                  duration: const Duration(seconds: 1),
+                                  backgroundColor: AppColors.charcoal,
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: const EdgeInsets.all(12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      disabledBackgroundColor: AppColors.grey300,
                       padding: EdgeInsets.zero,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -307,11 +344,11 @@ class _ProductCardState extends ConsumerState<ProductCard> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.visibility_outlined,
+                            Icon(Icons.shopping_cart_outlined,
                                 size: btnFs + 1, color: AppColors.white),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             Text(
-                              'Ver Producto',
+                              'Añadir',
                               style: TextStyle(
                                 fontFamily: AppTypography.fontFamily,
                                 fontSize: btnFs,
